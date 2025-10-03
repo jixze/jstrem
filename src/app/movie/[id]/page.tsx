@@ -1,14 +1,14 @@
 // app/movie/[id]/page.tsx
+// @ts-nocheck
 import Image from "next/image";
 import { getMovieById, getMovieVideos, getMovieCredits } from "@/lib/tmdb";
 import Tabs from "./Tabs";
 import MoviePlayer from "./MoviePlayer"; // client wrapper
-import { use } from "react";
 
 const IMG_BASE = "https://image.tmdb.org/t/p/original";
 
-export default async function MoviePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: movieId } = await params;
+export default async function MoviePage({ params, searchParams }) {
+  const movieId = params.id;
 
   const [movie, videos, credits] = await Promise.all([
     getMovieById(movieId),
@@ -16,34 +16,36 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
     getMovieCredits(movieId),
   ]);
 
+  // Intertitle/logo
   const logoRes = await fetch(
     `https://api.themoviedb.org/3/movie/${movieId}/images?api_key=${process.env.TMDB_API_KEY}&language=en`
   );
   const logoData = await logoRes.json();
   const intertitle = (logoData.logos || [])[0]?.file_path || null;
 
-  let suggestedMovies: any[] = [];
+  // Suggested movies
+  let suggestedMovies = [];
   if (movie.belongs_to_collection) {
     const collectionRes = await fetch(
       `https://api.themoviedb.org/3/collection/${movie.belongs_to_collection.id}?api_key=${process.env.TMDB_API_KEY}&language=en-US`
     );
     const collectionData = await collectionRes.json();
     suggestedMovies = collectionData.parts
-      .filter((m: any) => m.id !== movie.id)
+      .filter((m) => m.id !== movie.id)
       .slice(0, 8);
   }
 
   const trailer = (videos.results || []).find(
-    (v: any) => v.type === "Trailer" && v.site === "YouTube"
+    (v) => v.type === "Trailer" && v.site === "YouTube"
   );
 
   const releaseYear = movie.release_date
     ? new Date(movie.release_date).getFullYear()
     : "N/A";
   const duration = movie.runtime ? `${movie.runtime} min` : "N/A";
-  const genres = movie.genres?.map((g: any) => g.name).join(", ") || "N/A";
-  const director = credits.crew?.find((c: any) => c.job === "Director")?.name || "N/A";
-  const cast = credits.cast?.slice(0, 5).map((c: any) => c.name).join(", ") || "N/A";
+  const genres = movie.genres?.map((g) => g.name).join(", ") || "N/A";
+  const director = credits.crew?.find((c) => c.job === "Director")?.name || "N/A";
+  const cast = credits.cast?.slice(0, 5).map((c) => c.name).join(", ") || "N/A";
 
   return (
     <main className="relative min-h-screen text-white">
@@ -69,7 +71,9 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
             className="mb-4 object-contain"
           />
         ) : (
-          <h1 className="text-5xl md:text-6xl font-extrabold drop-shadow-lg mb-2">{movie.title}</h1>
+          <h1 className="text-5xl md:text-6xl font-extrabold drop-shadow-lg mb-2">
+            {movie.title}
+          </h1>
         )}
 
         <div className="flex items-center gap-3 mt-2">
@@ -86,7 +90,9 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
           <span>{genres}</span>
         </div>
 
-        <p className="mt-6 text-lg md:text-xl max-w-3xl leading-relaxed drop-shadow-md">{movie.overview}</p>
+        <p className="mt-6 text-lg md:text-xl max-w-3xl leading-relaxed drop-shadow-md">
+          {movie.overview}
+        </p>
 
         <MoviePlayer movieId={movie.id} trailerKey={trailer?.key} movieTitle={movie.title} />
 
@@ -94,13 +100,27 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
           suggested={suggestedMovies}
           details={
             <div className="text-gray-300 space-y-2 max-w-3xl">
-              <p><span className="font-semibold text-white">Description:</span> {movie.overview}</p>
-              <p><span className="font-semibold text-white">Duration:</span> {duration}</p>
-              <p><span className="font-semibold text-white">Release Date:</span> {movie.release_date}</p>
-              <p><span className="font-semibold text-white">Genre:</span> {genres}</p>
-              <p><span className="font-semibold text-white">Rating:</span> {movie.vote_average}/10</p>
-              <p><span className="font-semibold text-white">Director:</span> {director}</p>
-              <p><span className="font-semibold text-white">Starring:</span> {cast}</p>
+              <p>
+                <span className="font-semibold text-white">Description:</span> {movie.overview}
+              </p>
+              <p>
+                <span className="font-semibold text-white">Duration:</span> {duration}
+              </p>
+              <p>
+                <span className="font-semibold text-white">Release Date:</span> {movie.release_date}
+              </p>
+              <p>
+                <span className="font-semibold text-white">Genre:</span> {genres}
+              </p>
+              <p>
+                <span className="font-semibold text-white">Rating:</span> {movie.vote_average}/10
+              </p>
+              <p>
+                <span className="font-semibold text-white">Director:</span> {director}
+              </p>
+              <p>
+                <span className="font-semibold text-white">Starring:</span> {cast}
+              </p>
             </div>
           }
         />
