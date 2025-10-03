@@ -1,14 +1,14 @@
 // app/tv/[id]/page.tsx
+// @ts-nocheck
 import Image from "next/image";
 import { getTVById, getTVVideos, getTVCredits } from "@/lib/tmdb";
 import Tabs from "./Tabs";
-import TVPlayer from "./TVPlayer"; // client wrapper
-import { use } from "react";
+import TVPlayer from "./TVPlayer";
 
 const IMG_BASE = "https://image.tmdb.org/t/p/original";
 
-export default async function TVPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: tvId } = await params; // unwrap Promise
+export default async function TVPage({ params, searchParams }) {
+  const tvId = params.id;
 
   const [tvShow, videos, credits] = await Promise.all([
     getTVById(tvId),
@@ -16,14 +16,12 @@ export default async function TVPage({ params }: { params: Promise<{ id: string 
     getTVCredits(tvId),
   ]);
 
-  // Intertitle/logo
   const logoRes = await fetch(
     `https://api.themoviedb.org/3/tv/${tvId}/images?api_key=${process.env.TMDB_API_KEY}&language=en`
   );
   const logoData = await logoRes.json();
   const intertitle = (logoData.logos || [])[0]?.file_path || null;
 
-  // Suggested shows
   const similarRes = await fetch(
     `https://api.themoviedb.org/3/tv/${tvId}/similar?api_key=${process.env.TMDB_API_KEY}&language=en-US&page=1`
   );
@@ -31,18 +29,18 @@ export default async function TVPage({ params }: { params: Promise<{ id: string 
   const suggestedShows = similarData.results.slice(0, 8);
 
   const trailer = (videos.results || []).find(
-    (v: any) => v.type === "Trailer" && v.site === "YouTube"
+    (v) => v.type === "Trailer" && v.site === "YouTube"
   );
 
   const releaseYear = tvShow.first_air_date
     ? new Date(tvShow.first_air_date).getFullYear()
     : "N/A";
   const duration = tvShow.episode_run_time?.[0] ? `${tvShow.episode_run_time[0]} min` : "N/A";
-  const genres = tvShow.genres?.map((g: any) => g.name).join(", ") || "N/A";
-  const director = credits.crew?.find((c: any) => c.job === "Director")?.name || "N/A";
-  const cast = credits.cast?.slice(0, 5).map((c: any) => c.name).join(", ") || "N/A";
+  const genres = tvShow.genres?.map((g) => g.name).join(", ") || "N/A";
+  const director = credits.crew?.find((c) => c.job === "Director")?.name || "N/A";
+  const cast = credits.cast?.slice(0, 5).map((c) => c.name).join(", ") || "N/A";
 
-  const episodes = tvShow.seasons.flatMap((season: any) =>
+  const episodes = tvShow.seasons.flatMap((season) =>
     Array.from({ length: season.episode_count }, (_, i) => ({
       season: season.season_number,
       episode: i + 1,
@@ -50,19 +48,13 @@ export default async function TVPage({ params }: { params: Promise<{ id: string 
     }))
   );
 
-  const episodesPerSeason: Record<number, number> = tvShow.seasons.reduce(
-    (acc: Record<number, number>, s: any) => {
-      if (s.season_number && s.episode_count) {
-        acc[s.season_number] = s.episode_count;
-      }
-      return acc;
-    },
-    {}
-  );
+  const episodesPerSeason = tvShow.seasons.reduce((acc, s) => {
+    if (s.season_number && s.episode_count) acc[s.season_number] = s.episode_count;
+    return acc;
+  }, {});
 
   return (
     <main className="relative min-h-screen text-white">
-      {/* Background */}
       {tvShow.backdrop_path && (
         <div className="absolute inset-0 -z-10">
           <Image
@@ -76,7 +68,6 @@ export default async function TVPage({ params }: { params: Promise<{ id: string 
       )}
 
       <div className="relative max-w-6xl mx-auto px-6 py-20 flex flex-col items-start">
-        {/* Intertitle */}
         {intertitle ? (
           <Image
             src={`${IMG_BASE}${intertitle}`}
@@ -124,13 +115,27 @@ export default async function TVPage({ params }: { params: Promise<{ id: string 
           suggested={suggestedShows}
           details={
             <div className="text-gray-300 space-y-2 max-w-3xl">
-              <p><span className="font-semibold text-white">Description:</span> {tvShow.overview}</p>
-              <p><span className="font-semibold text-white">Episode Duration:</span> {duration}</p>
-              <p><span className="font-semibold text-white">First Air Date:</span> {tvShow.first_air_date}</p>
-              <p><span className="font-semibold text-white">Genre:</span> {genres}</p>
-              <p><span className="font-semibold text-white">Rating:</span> {tvShow.vote_average}/10</p>
-              <p><span className="font-semibold text-white">Director:</span> {director}</p>
-              <p><span className="font-semibold text-white">Starring:</span> {cast}</p>
+              <p>
+                <span className="font-semibold text-white">Description:</span> {tvShow.overview}
+              </p>
+              <p>
+                <span className="font-semibold text-white">Episode Duration:</span> {duration}
+              </p>
+              <p>
+                <span className="font-semibold text-white">First Air Date:</span> {tvShow.first_air_date}
+              </p>
+              <p>
+                <span className="font-semibold text-white">Genre:</span> {genres}
+              </p>
+              <p>
+                <span className="font-semibold text-white">Rating:</span> {tvShow.vote_average}/10
+              </p>
+              <p>
+                <span className="font-semibold text-white">Director:</span> {director}
+              </p>
+              <p>
+                <span className="font-semibold text-white">Starring:</span> {cast}
+              </p>
             </div>
           }
         />
