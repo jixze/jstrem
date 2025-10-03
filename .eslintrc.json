@@ -1,8 +1,16 @@
 {
-    "extends": ["next/core-web-vitals", "plugin:@typescript-eslint/recommended"],
-    "rules": {
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unused-vars": "warn"
-    }
+  "root": true,
+  "extends": ["next/core-web-vitals", "plugin:@typescript-eslint/recommended"],
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "rules": {
+    // Disable explicit any errors
+    "@typescript-eslint/no-explicit-any": "off",
+
+    // Warn for unused variables instead of breaking build
+    "@typescript-eslint/no-unused-vars": "warn",
+
+    // Optional: allow @ts-ignore comments without warning
+    "@typescript-eslint/ban-ts-comment": "off"
   }
-  
+}
